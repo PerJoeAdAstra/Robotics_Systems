@@ -2,7 +2,7 @@
 
 __TODO__
 - [x] Setup git
-- [ ] Setup overleaf doc, link when done: https://www.AnActualLink.com
+- [ ] Setup overleaf doc, link when done: https://www.overleaf.com/4863979513zbkvhxdvsqpd 
 - [x] Write Romi "Roomba" (obstacle) code
 - [ ] Check how infrared module works
 - [x] Write skeleton code for baseline solution
