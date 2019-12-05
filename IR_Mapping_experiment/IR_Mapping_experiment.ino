@@ -70,9 +70,9 @@ u8 USB_SendSpace(u8 ep);
 #define M1_DIR          15
 #define M1_PWM          9
 
-#define L_SENSE_L       A4  // Line sensor pins
-#define L_SENSE_C       A3
-#define L_SENSE_R       A2
+//#define L_SENSE_L       A4  // Line sensor pins
+//#define L_SENSE_C       A3
+//#define L_SENSE_R       A2
 
 #define BUZZER_PIN      6   // To make the annoying beeping
 
@@ -82,6 +82,7 @@ u8 USB_SendSpace(u8 ep);
 
 #define BUTTON_A       14   // Push button labelled A on board.
 #define BUTTON_B       30   // Push button labelled B on board.
+#define BUTTON_C       17   // Push button labelled C on board. TODO??
 
 // Behaviour parameters
 #define LINE_THRESHOLD        450.00
@@ -92,9 +93,9 @@ u8 USB_SendSpace(u8 ep);
 
 // Speed controller for motors.
 // Using same gains for left and right.
-#define SPD_PGAIN     3.5
+#define SPD_PGAIN     1
 #define SPD_IGAIN     0.1
-#define SPD_DGAIN     -1.5
+#define SPD_DGAIN     0
 
 // PID controller gains for heading feedback
 #define H_PGAIN   1.8
@@ -107,7 +108,6 @@ u8 USB_SendSpace(u8 ep);
     Please investigate class tabs for methods.
 *****************************************************************************/
 
-LineSensor  LineSensor( L_SENSE_L, L_SENSE_C, L_SENSE_R );  // Class to handle all 3 line sensors.
 Motor       L_Motor( M0_PWM, M0_DIR);                       // To set left motor power.
 Motor       R_Motor( M1_PWM, M1_DIR);                       // To set right motor power.
 PID         L_PID( SPD_PGAIN, SPD_IGAIN, SPD_DGAIN );       // Speed control, left.
@@ -134,11 +134,15 @@ volatile float l_speed_t3, r_speed_t3;
 // can be in.
 int STATE;
 #define STATE_CALIBRATE       0    // calibrates line sensor
-#define STATE_INITIAL         1    // picks a random next state
+#define STATE_WAIT            1    // picks a random next state
 #define STATE_SCANNING        2    // takes a new map scan in 360 degrees
 #define STATE_ROTATE          3    // rotates the romi
 #define STATE_TAKE_READING    4    // Takes a reading and adds it to the map
 
+#define ANGLE_STEP 10.0
+
+float target_angle;
+bool scan_finished;
 
 
 /*****************************************************************************
@@ -190,11 +194,11 @@ void setup() {
   // block your Romi from finishing Startup up until
   // a button is pressed.
   // Please look into helper function section below.
-  decideStartUpFromButtons();
-
+//  decideStartUpFromButtons();
+  float target_angle = RomiPose.theta;
   // set Initial State, also resets timestamps
-  changeState( STATE_CALIBRATE );
-
+  changeState( STATE_WAIT );
+  
 }// end of setup, Ready to go!
 
 
@@ -216,81 +220,40 @@ void loop() {
   if (  millis() - update_t > 50 ) {
     update_t = millis();
 
-//    // We check for a line, and if we find one
-//    // we immediately change state to line following.
-//    if ( LineSensor.onLine( LINE_THRESHOLD ) ) {
-//
-//      // Record that we found a line.
-//      Map.updateMapFeature( 'L' , RomiPose.x, RomiPose.y );
-//
-//      // Set next state to line following, caught
-//      // by switch below
-//      changeState( STATE_FOLLOW_LINE );
-//
-//    }
-
-    // We always check for obstacles.  If we
-    // detect one, we immediately change state
-    // to avoid obstacles. Note, comes after
-    // line detection, so in effect higher
-    // priority ( the last to change the state)
-    //if ( SERIAL_ACTIVE ) Serial.println( IRSensor0.getDistanceInMM() );
-    if ( IRSensor0.getDistanceInMM() < IR_AVOIDED_THRESHOLD ) { //arbritraty max threshold
-
-      // Record that we found an obstruction
-      // Note that, this places the object in the map at
-      // the romi x/y, not taking account for the distance
-      // measure to the object itself.
-      // Using LED just to see if it is working.
-      digitalWrite(DEBUG_LED, HIGH);
-      Map.updateMapFeature( 'O' , RomiPose.x, RomiPose.y );
-
-      // Set next state to obstacle avoidance,
-      // caught be switch below.
-      changeState( STATE_AVOID_OBSTACLE );
-
-    } else {
-      digitalWrite(DEBUG_LED, LOW);
-    }
-
     // Note that, STATE is set at the transition (exit)
     // out of any of the below STATE_ functions, with the 
     // exception of finding the line or an obstacle above.
     // You should rebuild this state machine to suit your
     // objective.  You can do this by changing which state
     // is set when a behaviour finishes (see behaviours code).
+    Serial.println(STATE);
+    delay(100);
     switch ( STATE ) {
       
       case STATE_CALIBRATE:
         calibrateSensors();
         break;
 
-      case STATE_INITIAL:
-        initialBehaviour();
+      case STATE_WAIT:
+        waitBehaviour();
         break;
       
-      case STATE_SCAN:
-//      if(heading == 360 degrees)
-          changeState(STATE_INITIAL);
-//      else
-          changeState(STATE_TAKE_READINGS);
+      case STATE_SCANNING:
+        scan();
         break;
       
       case STATE_ROTATE:
-        //calculate new target heading
-        //Rotate to new target heading
-        if(not at target)
-          keep rotating
-        else
-          changeState(STATE_SCAN);
+        Serial.println(target_angle);
+        turnToAngle(degsToRads(target_angle)); //angle is global, TODO change function to radians
         break;
 
-
       case STATE_TAKE_READING:
-//      take n sensor readings
-//      average them out
-//      Calculate x, y coordinates
-//      update map
+        takeReading();
+        target_angle += ANGLE_STEP;
+        if(target_angle >= 360.0){
+          scan_finished = true;
+          target_angle = 0;
+        }
         changeState( STATE_ROTATE );
         break;
 
@@ -421,7 +384,7 @@ void changeState( int which ) {
   // reset PID
   L_PID.reset();
   R_PID.reset();
-//Hi_PID.reset(); Dont reset the heading pid #FIXME?
+  H_PID.reset();
 
   return;
 }
@@ -438,7 +401,7 @@ void calibrateSensors() {
 
   // After calibrating, we send the robot to
   // its initial state.
-  changeState( STATE_INITIAL );
+  changeState( STATE_WAIT );
 }
 
 
@@ -447,11 +410,43 @@ void calibrateSensors() {
 // routine.
 // But we'll use it to instead decide a
 // random next state.
-void initialBehaviour() {
-  //If push A
-    // Print out the map
-  //if push b
-//    changeState( STATE_SCANNING );
+void waitBehaviour() {
+  int mode = -1;
+  do {
+
+    if ( SERIAL_ACTIVE ) Serial.println("Waiting for button a (print map) or b (rescan map), or c: recalibrate (10mm)");
+
+    int btn_a = digitalRead( BUTTON_A );
+    int btn_b = digitalRead( BUTTON_B );
+    int btn_c = digitalRead( BUTTON_C );
+
+    // Decide if we are going to print
+    // or erase the map.
+    if ( btn_a == LOW ) {
+      mode = 0;
+    } else if ( btn_b == LOW ) {
+      mode = 1;
+    } else if ( btn_c == LOW ) {
+      mode = 2;
+    }
+
+  } while ( mode < 0 );
+
+  // Acknowledge button press.
+  beep();
+  
+  if (mode == 0){
+    Map.printMap();
+    delay(5000);
+  }
+  if (mode == 1){
+    scan_finished = false;
+    Map.resetMap();
+    changeState( STATE_SCANNING );  
+  }
+  if(mode == 2){
+    changeState( STATE_CALIBRATE );
+  }
 }
 
 void driveStraight() {
@@ -465,7 +460,7 @@ void driveStraight() {
 
     // This ensures that the PID are reset
     // and sets the new STATE flag.
-    changeState( STATE_INITIAL );
+    changeState( STATE_WAIT );
     return;
 
   } else { // Otherwise, drive straight.
@@ -502,7 +497,7 @@ void avoidObstacle() {
 
     // This ensures that the PID are reset
     // and sets the new STATE flag.
-    changeState( STATE_INITIAL );
+    changeState( STATE_WAIT );
     return;
 
   } else { // Otherwise, Turn away from obstacle.
@@ -520,22 +515,20 @@ void avoidObstacle() {
 
   }
 }
-
+/*
 void followLine() {
-
 
   // If we have lost the line, we change state.
   if ( LineSensor.onLine( LINE_THRESHOLD ) == false ) {
 
     // This ensures that the PID are reset
     // and sets the new STATE flag.
-    changeState( STATE_INITIAL  );
+    changeState( STATE_WAIT  );
 
   } else {    // else, line following behaviour
 
     // Measurement is the different in angle, demand is 0
     // bearing steers us to minimise difference toward 0
-    float line_heading  = LineSensor.getHeading();
     float steering      = H_PID.update( 0, line_heading );
     float fwd_bias      = LINE_FOLLOW_SPEED;
 
@@ -550,6 +543,56 @@ void followLine() {
   } // end of oneLine()==false if()
 
 }// end of behaviour
+*/
+void takeReading(){
+  float reading = 0;
+  int totalReadings = 20;
+  for(int i = 0; i < totalReadings ; i++){
+    reading += IRSensor0.getDistanceInMM();
+  }
+  reading /= totalReadings;
+
+  //calculate the x,y location using RomiPose.theta and reading
+  float x = reading * sin(RomiPose.theta); //TODO Check this works for all thetas
+  float y = reading * cos(RomiPose.theta); 
+  
+  //Add to map
+  Map.updateMapFeature('o', x, y);
+}
+
+void turnToAngle(int angle) {
+
+  float demand_angle = angle;
+
+  float diff = atan2( sin( ( demand_angle - RomiPose.theta) ), cos( (demand_angle - RomiPose.theta) ) );
+
+  // If we have got the Romi theta to roughly match
+  // the demand (by getting the difference to 0(ish)
+  // We transition out of this behaviour.
+  if ( abs( diff ) < 0.03 ) {
+
+    // This ensures that the PID are reset
+    // and sets the new STATE flag.
+    changeState( STATE_SCANNING  );
+
+  } else {    // else, turning behaviour
+
+    // Measurement is the different in angle, demand is 0
+    // bearing steers us to minimise difference toward 0
+    float bearing = H_PID.update( 0, diff );
+
+    // Append to motor speed control
+    float l_pwr = L_PID.update( (0 - bearing), l_speed_t3 );
+    float r_pwr = R_PID.update( (0 + bearing), r_speed_t3 );
+
+    // Set motor power.
+    L_Motor.setPower(l_pwr);
+    R_Motor.setPower(r_pwr);
+
+  } // end of abs(diff)<0.03 if()
+
+}// end of behaviour
+
 
 void turnToThetaPIOver2() {
 
@@ -571,7 +614,7 @@ void turnToThetaPIOver2() {
 
     // This ensures that the PID are reset
     // and sets the new STATE flag.
-    changeState( STATE_INITIAL  );
+    changeState( STATE_WAIT  );
 
   } else {    // else, turning behaviour
 
@@ -607,7 +650,7 @@ void turnToThetaZero() {
   // the demand (by getting the difference to 0(ish)
   // We transition out of this behaviour.
   if ( abs( diff ) < 0.03 ) {
-    changeState( STATE_INITIAL  );
+    changeState( STATE_WAIT  );
 
   } else {    // else, turning behaviour
 
@@ -636,7 +679,7 @@ void randomWalk() {
 
     // This ensures that the PID are reset
     // and sets the new STATE flag.
-    changeState( STATE_INITIAL );
+    changeState( STATE_WAIT );
     return;
 
   } else { // Otherwise, conduct a random walk behaviour
@@ -678,3 +721,17 @@ void randomWalk() {
   }// End of (elapsed_t > 6000) if()
 
 }// End of this behaviour.
+
+void scan(){
+  if (scan_finished) changeState( STATE_WAIT );
+  else changeState(STATE_TAKE_READING);
+}
+
+// ========== Helper functions for angles ============
+float degsToRads(float a){
+  return (a /360.0) * 2 * M_PI;
+}
+
+float radsToDegs(float a){
+  return (a * 360.0) / (2 * M_PI);
+}
