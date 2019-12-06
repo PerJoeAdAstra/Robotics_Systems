@@ -139,7 +139,7 @@ int STATE;
 #define STATE_ROTATE          3    // rotates the romi
 #define STATE_TAKE_READING    4    // Takes a reading and adds it to the map
 
-#define ANGLE_STEP 20.0
+#define ANGLE_STEP 10.0
 
 float target_angle;
 bool scan_finished;
