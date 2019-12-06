@@ -98,7 +98,7 @@ u8 USB_SendSpace(u8 ep);
 #define SPD_DGAIN     0
 
 // PID controller gains for heading feedback
-#define H_PGAIN   1.8
+#define H_PGAIN   5.0//1.8
 #define H_IGAIN   0.0001
 #define H_DGAIN   0.0
 
@@ -139,7 +139,7 @@ int STATE;
 #define STATE_ROTATE          3    // rotates the romi
 #define STATE_TAKE_READING    4    // Takes a reading and adds it to the map
 
-#define ANGLE_STEP 10.0
+#define ANGLE_STEP 20.0
 
 float target_angle;
 bool scan_finished;
@@ -226,8 +226,6 @@ void loop() {
     // You should rebuild this state machine to suit your
     // objective.  You can do this by changing which state
     // is set when a behaviour finishes (see behaviours code).
-    Serial.println(STATE);
-    delay(100);
     switch ( STATE ) {
       
       case STATE_CALIBRATE:
@@ -243,7 +241,6 @@ void loop() {
         break;
       
       case STATE_ROTATE:
-        Serial.println(target_angle);
         turnToAngle(degsToRads(target_angle)); //angle is global, TODO change function to radians
         break;
 
@@ -252,7 +249,7 @@ void loop() {
         target_angle += ANGLE_STEP;
         if(target_angle >= 360.0){
           scan_finished = true;
-          target_angle = 0;
+          target_angle = 0.0;
         }
         changeState( STATE_ROTATE );
         break;
@@ -411,11 +408,9 @@ void calibrateSensors() {
 // But we'll use it to instead decide a
 // random next state.
 void waitBehaviour() {
+  if ( SERIAL_ACTIVE ) Serial.println("Waiting for button a (print map) or b (rescan map), or c: recalibrate (10mm)");
   int mode = -1;
   do {
-
-    if ( SERIAL_ACTIVE ) Serial.println("Waiting for button a (print map) or b (rescan map), or c: recalibrate (10mm)");
-
     int btn_a = digitalRead( BUTTON_A );
     int btn_b = digitalRead( BUTTON_B );
     int btn_c = digitalRead( BUTTON_C );
@@ -442,6 +437,10 @@ void waitBehaviour() {
   if (mode == 1){
     scan_finished = false;
     Map.resetMap();
+    Map.updateMapFeature('R', RomiPose.x, RomiPose.y);
+//    Map.updateMapFeature('u', RomiPose.x, RomiPose.y + 300);
+//    Map.updateMapFeature('r', RomiPose.x + 300, RomiPose.y);
+//    changeState(STATE_WAIT);
     changeState( STATE_SCANNING );  
   }
   if(mode == 2){
@@ -555,12 +554,16 @@ void takeReading(){
   //calculate the x,y location using RomiPose.theta and reading
   float x = reading * sin(RomiPose.theta); //TODO Check this works for all thetas
   float y = reading * cos(RomiPose.theta); 
-  
+  Serial.print("x:");
+  Serial.print(x);
+  Serial.print(",y:");
+  Serial.print(y);
+  Serial.print('\n');
   //Add to map
-  Map.updateMapFeature('o', x, y);
+  Map.updateMapFeature('o', RomiPose.x + x, RomiPose.y + y);
 }
 
-void turnToAngle(int angle) {
+void turnToAngle(float angle) {
 
   float demand_angle = angle;
 
