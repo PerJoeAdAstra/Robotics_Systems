@@ -1,6 +1,7 @@
 #ifndef _Mapping_h
 #define _Mapping_h
 
+
 #include <EEPROM.h>
 #include <USBCore.h>    // To fix serial print behaviour bug.
 u8 USB_SendSpace(u8 ep);
@@ -43,7 +44,7 @@ void Mapper::resetMap() {
 }
 
 void Mapper::printMap() {
-
+  
   if ( SERIAL_ACTIVE ) {
     Serial.println("Map");
     for (int i = MAP_RESOLUTION - 1; i >= 0; i--) {
@@ -51,11 +52,15 @@ void Mapper::printMap() {
         int eeprom_address = (i * MAP_RESOLUTION) + j;
         byte value;
         value = EEPROM.read(eeprom_address);//, value);
-        Serial.print( (char)value );
-        Serial.print(" ");
+        if(value){
+          
+          Serial.print( (char)value );
+        }
+      
       }
-      Serial.println("");
+    Serial.println("");
     }
+  
   }
 }
 
@@ -80,6 +85,8 @@ void Mapper::updateMapFeature(byte feature, int y, int x) {
     if(SERIAL_ACTIVE) Serial.println(F("Error:Invalid co-ordinate"));
     return;
   }
+  
+
 
   int x_index = poseToIndex(x, MAP_X, MAP_RESOLUTION);
   int y_index = poseToIndex(y, MAP_Y, MAP_RESOLUTION);

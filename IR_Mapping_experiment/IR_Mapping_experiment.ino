@@ -51,6 +51,8 @@
 #include "mapping.h"    // Used to store and read a metric byte map to EEPROM.
 #include "utils.h"      // Used to generate random gaussian numbers.
 #include "irproximity.h"// Used for the ir distance sensor.
+#include <stdlib.h>
+#include "Vector.h"
 
 //#include "imu.h"          // Advanced, work through labsheet if you wish to use.
 //#include "magnetometer.h" // Advanced, work through labsheet if you wish to use.
@@ -145,6 +147,13 @@ float target_angle;
 bool scan_finished;
 
 
+struct Measurement{
+  float distance_measured;
+  float theta;
+};
+
+
+Vector<Measurement> measurements;
 /*****************************************************************************
     SETUP
     REQUIRED, RUNS ONCE ON POWER UP.
@@ -238,6 +247,7 @@ void loop() {
       
       case STATE_SCANNING:
         scan();
+        
         break;
       
       case STATE_ROTATE:
@@ -321,6 +331,17 @@ void decideStartUpFromButtons() {
   Map.resetMap();
 
 }
+
+float calculateAccuracy(){
+  Serial.println("Calculating accuracy..");
+  float accuracy = 0;
+  float objective_measurement = 0;
+  for (int i = 0; i < measurements.size(); i++){
+    objective_measurement = abs(270*sin(radsToDegs(measurements[i].theta)));
+    Serial.println((String)objective_measurement + ", " + (String)measurements[i].distance_measured );
+  }
+}
+
 
 // Note, this blocks the flow/timing
 // of your code.  Use sparingly.
@@ -430,8 +451,9 @@ void waitBehaviour() {
   // Acknowledge button press.
   beep();
   
-  if (mode == 0){
+  if (mode == 0){ 
     Map.printMap();
+    calculateAccuracy();
     delay(5000);
   }
   if (mode == 1){
@@ -544,21 +566,35 @@ void followLine() {
 }// end of behaviour
 */
 void takeReading(){
+  Measurement measurement;
   float reading = 0;
   int totalReadings = 20;
+  float theta = RomiPose.theta;
+  
   for(int i = 0; i < totalReadings ; i++){
     reading += IRSensor0.getDistanceInMM();
   }
   reading /= totalReadings;
-
+  
   //calculate the x,y location using RomiPose.theta and reading
-  float x = reading * sin(RomiPose.theta); //TODO Check this works for all thetas
-  float y = reading * cos(RomiPose.theta); 
+  float x = reading * sin(theta); //TODO Check this works for all thetas
+  float y = reading * cos(theta);
+  float distance = 0.0f;
   Serial.print("x:");
   Serial.print(x);
   Serial.print(",y:");
   Serial.print(y);
   Serial.print('\n');
+  if(int(radsToDegs(theta)/45) %2 == 0) distance = fabs(270/cos(fmod(theta,PI/2)));
+  else{distance = fabs(270/sin(fmod(theta,PI/2)));}
+  Serial.println("Reading: " + (String)reading + ", " + "Theta: " + (String) theta + ", Actual Distance: " + (String)distance);  
+
+  measurement.distance_measured = reading;
+  measurement.theta = theta;
+
+
+
+
   //Add to map
   Map.updateMapFeature('o', RomiPose.x + x, RomiPose.y + y);
 }
