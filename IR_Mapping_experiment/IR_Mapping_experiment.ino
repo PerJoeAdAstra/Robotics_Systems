@@ -415,8 +415,7 @@ void calibrateSensors() {
   R_Motor.setPower( 0 );
 
   // Other sensors..?
-  // TODO ADD IR sensor callibration?
-
+  IRSensor0.calibrate(270);
   // After calibrating, we send the robot to
   // its initial state.
   changeState( STATE_WAIT );
@@ -511,7 +510,7 @@ void avoidObstacle() {
 
 
   // Get a distance measurement to object.
-  float distance = IRSensor0.getDistanceInMM();
+  float distance = IRSensor0.getDistanceCalibrated();
 
   // If we are a safe distance away, change state.
   if (  distance > IR_AVOIDED_THRESHOLD ) {
@@ -572,7 +571,7 @@ void takeReading(){
   float theta = RomiPose.theta;
   
   for(int i = 0; i < totalReadings ; i++){
-    reading += IRSensor0.getDistanceInMM();
+    reading += IRSensor0.getDistanceCalibrated();
   }
   reading /= totalReadings;
   

@@ -4,12 +4,14 @@
 class SharpIR {
     public:
         SharpIR(byte pin);
-        int  getDistanceRaw();
-        float  getDistanceInMM();
-        void calibrate();
+        int getDistanceRaw();
+        float getDistanceInMM(float distance);
+        void calibrate(float distance);
+        float getDistanceCalibrated();
 
     private:
         byte pin;
+        float delta;
 };
 
 SharpIR::SharpIR(byte _pin) {
@@ -21,6 +23,30 @@ int SharpIR::getDistanceRaw( ) {
 }
 
 
+void SharpIR::calibrate(float distance){
+  // user specificies distance it will be calibrated to
+  // difference is calculated over 100 reads
+  // return difference
+  float totalValues = 0;
+  float avgMM = 0;
+
+  for (int i = 0; i< 400; i++){
+    totalValues += analogRead(pin); // get 100 raw readings
+  }
+
+  float avgValue = totalValues/=100; // find the average
+  avgMM = getDistanceInMM(avgValue); //convert to MM
+  delta = distance - avgMM; // find difference
+  Serial.println("delta: " + (String)delta);
+  Serial.println("distance: " + (String)distance);
+  Serial.println("avgMM: " + (String)avgMM);
+}
+
+float SharpIR::getDistanceCalibrated(){
+  return getDistanceInMM(getDistanceRaw()) - delta;
+}
+
+
 /*
  * This piece of code is quite crucial to mapping
  * obstacle distance accurately, so you are encouraged
@@ -28,9 +54,7 @@ int SharpIR::getDistanceRaw( ) {
  * Also remember to make sure your sensor is fixed to your
  * Romi firmly and has a clear line of sight!
  */
-float SharpIR::getDistanceInMM() {
-    
-    float distance = (float)analogRead( pin );
+float SharpIR::getDistanceInMM(float distance) {
     
     // map this to 0 : 5v range.
     distance *= 0.0048;
