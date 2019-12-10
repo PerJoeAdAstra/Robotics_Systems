@@ -332,15 +332,15 @@ void decideStartUpFromButtons() {
 
 }
 
-float calculateAccuracy(){
-  Serial.println("Calculating accuracy..");
-  float accuracy = 0;
-  float objective_measurement = 0;
-  for (int i = 0; i < measurements.size(); i++){
-    objective_measurement = abs(270*sin(radsToDegs(measurements[i].theta)));
-    Serial.println((String)objective_measurement + ", " + (String)measurements[i].distance_measured );
-  }
-}
+// float calculateAccuracy(){
+//   Serial.println("Calculating accuracy..");
+//   float accuracy = 0;
+//   float objective_measurement = 0;
+//   for (int i = 0; i < measurements.size(); i++){
+//     objective_measurement = abs(270*sin(radsToDegs(measurements[i].theta)));
+//     Serial.println((String)objective_measurement + ", " + (String)measurements[i].distance_measured );
+//   }
+// }
 
 
 // Note, this blocks the flow/timing
@@ -452,7 +452,7 @@ void waitBehaviour() {
   
   if (mode == 0){ 
     Map.printMap();
-    calculateAccuracy();
+    // calculateAccuracy();
     delay(5000);
   }
   if (mode == 1){
@@ -579,11 +579,6 @@ void takeReading(){
   float x = reading * sin(theta); //TODO Check this works for all thetas
   float y = reading * cos(theta);
   float distance = 0.0f;
-  Serial.print("x:");
-  Serial.print(x);
-  Serial.print(",y:");
-  Serial.print(y);
-  Serial.print('\n');
   if(int(radsToDegs(theta)/45) %2 == 0) distance = fabs(270/cos(fmod(theta,PI/2)));
   else{distance = fabs(270/sin(fmod(theta,PI/2)));}
   Serial.println("Reading: " + (String)reading + ", " + "Theta: " + (String) theta + ", Actual Distance: " + (String)distance);  
