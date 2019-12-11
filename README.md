@@ -8,6 +8,7 @@ __TODO__
 - [ ] Create alternate baseline (constantly rotating)
 - [x] Calibrate Sensors
 - [x] Do baseline experiment, Create some way of calculating accuracy. (Some way of storying theta and measurement) use python script to calculate? Could do more readings, changing speed. (bonus? changing shape). (bonus+: using the map as a tally for a false/true positives/negatives graph kinda metric)).
-- [ ] Add improvement to system. Integrating multiple sensors (diffrerent distances?), adding a confidence metric using the map as a tally/ some probability?
+- [x] Add improvement to system. Integrating multiple sensors (diffrerent distances?), adding a confidence metric using the map as a tally/ some probability?
+- [ ] Figure out why estimation is slanted
 - [ ] Update TODO list.
 - [ ] Delete TODO list.
