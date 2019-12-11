@@ -78,7 +78,8 @@ u8 USB_SendSpace(u8 ep);
 
 #define BUZZER_PIN      6   // To make the annoying beeping
 
-#define IR_PROX_PIN    A0   // IR Sensor
+#define IR_PROX_PIN0    A0   // IR Sensor 0
+#define IR_PROX_PIN1    A1   // IR Sensor 1
 
 #define DEBUG_LED      13   // Using the orange LED for debugging
 
@@ -115,7 +116,8 @@ Motor       R_Motor( M1_PWM, M1_DIR);                       // To set right moto
 PID         L_PID( SPD_PGAIN, SPD_IGAIN, SPD_DGAIN );       // Speed control, left.
 PID         R_PID( SPD_PGAIN, SPD_IGAIN, SPD_DGAIN );       // Speed control, right.
 PID         H_PID( H_PGAIN, H_IGAIN, H_DGAIN );             // Position control, angle.
-SharpIR     IRSensor0( IR_PROX_PIN );                       // Get distance to objects (incomplete class)
+SharpIR     IRSensor0( IR_PROX_PIN0 );                       // Get distance to objects (incomplete class)
+SharpIR     IRSensor1( IR_PROX_PIN1 );                       // Get distance to objects (incomplete class)
 Kinematics  RomiPose;                                       // Not using ICC.
 Mapper      Map;                                            // Default: 25x25 grid, 72mm resolution.
 
@@ -142,18 +144,11 @@ int STATE;
 #define STATE_TAKE_READING    4    // Takes a reading and adds it to the map
 
 #define ANGLE_STEP 10.0
+#define ANGLE_SEPERATION 24.0
 
 float target_angle;
 bool scan_finished;
 
-
-struct Measurement{
-  float distance_measured;
-  float theta;
-};
-
-
-Vector<Measurement> measurements;
 /*****************************************************************************
     SETUP
     REQUIRED, RUNS ONCE ON POWER UP.
@@ -414,8 +409,11 @@ void calibrateSensors() {
   L_Motor.setPower( 0 );
   R_Motor.setPower( 0 );
 
+
   // Other sensors..?
-  IRSensor0.calibrate(270);
+
+  IRSensor0.calibrate(fabs(270/cos(fmod(RomiPose.theta + degsToRads(ANGLE_SEPERATION)+ TWO_PI,TWO_PI))));
+  IRSensor1.calibrate(fabs(270/cos(fmod(RomiPose.theta - degsToRads(ANGLE_SEPERATION)+ TWO_PI,TWO_PI))));
   // After calibrating, we send the robot to
   // its initial state.
   changeState( STATE_WAIT );
@@ -565,29 +563,51 @@ void followLine() {
 }// end of behaviour
 */
 void takeReading(){
-  Measurement measurement;
-  float reading = 0;
+  float reading_0 = 0.0f; 
+  float reading_1 = 0.0f;
   int totalReadings = 20;
-  float theta = RomiPose.theta;
+  float theta_0 = fmod((RomiPose.theta + degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);
+  float theta_1 = fmod((RomiPose.theta - degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);
   
   for(int i = 0; i < totalReadings ; i++){
-    reading += IRSensor0.getDistanceCalibrated();
+    reading_0 += IRSensor0.getDistanceCalibrated();
+    reading_1 += IRSensor1.getDistanceCalibrated();
   }
-  reading /= totalReadings;
+
+  reading_0 /= totalReadings;
+  reading_1 /= totalReadings;
+
   
-  //calculate the x,y location using RomiPose.theta and reading
-  float x = reading * sin(theta); //TODO Check this works for all thetas
-  float y = reading * cos(theta);
-  float distance = 0.0f;
-  if(int(radsToDegs(theta)/45) %2 == 0) distance = fabs(270/cos(fmod(theta,PI/2)));
-  else{distance = fabs(270/sin(fmod(theta,PI/2)));}
-  Serial.println("Reading: " + (String)reading + ", " + "Theta: " + (String) theta + ", Actual Distance: " + (String)distance);  
+  
+  //calculate the x,y location using RomiPose.theta and readings
+  float x_0 = reading_0 * sin(theta_0);
+  float y_0 = reading_0 * cos(theta_0);
 
-  measurement.distance_measured = reading;
-  measurement.theta = theta;
+ 
+  
 
+  float x_1 = reading_1 * sin(theta_1);
+  float y_1 = reading_1 * cos(theta_1);
 
+  float x = (x_0+x_1)/2;
+  float y = (y_0+y_1)/2;
+//
+//  Serial.println("x_0: " + (String)x_0 + " y_0: " + (String) y_0 + " Theta_0: " + (String) theta_0);
+//  Serial.println("x_1: " + (String)x_1 + " y_1: " + (String) y_1+ " Theta_1: " + (String) theta_1);
+//  Serial.println("x: " + (String)x + " y: " + (String) y + " Theta: " + (String)((theta_0+theta_1)/2));
+//  
+  float distance_0 = 0.0f; 
+  float distance_1 = 0.0f;
 
+  if(int(radsToDegs(theta_0/45)) %2 == 0) distance_0 = fabs(270/cos(fmod(theta_0,PI/2)));
+  else{distance_0 = fabs(270/sin(fmod(theta_0,PI/2)));}
+//  Serial.println("Reading_0: " + (String)reading_0 + ", " + "Theta_0: " + (String) theta_0 + ", Actual Distance_0: " + (String)distance_0);
+
+  if(int(radsToDegs(theta_1/45)) %2 == 0) distance_1 = fabs(270/cos(fmod(theta_1,PI/2)));
+  else{distance_1 = fabs(270/sin(fmod(theta_1,PI/2)));}
+//  Serial.println("Reading_1: " + (String)reading_1 + ", " + "Theta_1: " + (String) theta_1 + ", Actual Distance_1: " + (String)distance_1);  
+
+  Serial.println("Average Reading: " + (String)((reading_1+reading_0)/2) + ", " + "Theta: " + (String) ((theta_1+theta_0)/2) + ", Actual Distance_1: " + (String)((distance_0+distance_1)/2));
 
   //Add to map
   Map.updateMapFeature('o', RomiPose.x + x, RomiPose.y + y);

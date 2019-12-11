@@ -12,6 +12,7 @@ class SharpIR {
     private:
         byte pin;
         float delta;
+        int NUM_OF_READINGS = 400;
 };
 
 SharpIR::SharpIR(byte _pin) {
@@ -30,11 +31,11 @@ void SharpIR::calibrate(float distance){
   float totalValues = 0;
   float avgMM = 0;
 
-  for (int i = 0; i< 400; i++){
-    totalValues += analogRead(pin); // get 100 raw readings
+  for (int i = 0; i< NUM_OF_READINGS; i++){
+    totalValues += getDistanceRaw(); // get 100 raw readings
   }
 
-  float avgValue = totalValues/=100; // find the average
+  float avgValue = totalValues/NUM_OF_READINGS; // find the average
   avgMM = getDistanceInMM(avgValue); //convert to MM
   delta = distance - avgMM; // find difference
   Serial.println("delta: " + (String)delta);
@@ -43,7 +44,7 @@ void SharpIR::calibrate(float distance){
 }
 
 float SharpIR::getDistanceCalibrated(){
-  return getDistanceInMM(getDistanceRaw()) - delta;
+  return getDistanceInMM(getDistanceRaw()) + delta;
 }
 
 
