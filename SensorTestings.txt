@@ -1,0 +1,28 @@
+------Sensor testing-------
+  Average of 400 readings
+        0 degrees
+
+    360mm -> 463.19mm
+    300mm -> 358.32mm
+    240mm -> 278.21mm
+    180mm -> 198.53mm
+    120mm -> 122.73mm
+    60mm  -> 99.60mm
+
+
+       22.5 degrees
+    360mm -> 443.18mm
+    300mm -> 345.64mm
+    240mm -> 270.27mm
+    180mm -> 192.06mm
+    120mm -> 110.96mm
+    60mm  -> 99.07mm
+
+       45 degrees
+    360mm -> 415.47mm 
+    300mm -> 358.67mm 
+    240mm -> 270.44mm
+    180mm -> 187.52mm
+    120mm -> 122.73mm
+    60mm  -> 99.60mm
+
