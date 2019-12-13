@@ -1,25 +1,35 @@
 ---------------
-run 1
+run 1 - 1 Sensor Reading
 13
 23
 0.361111111111
+Average deviation = 55.2202777778mm
 ---------------
-run 2
+run 2 - 1 Sensor Reading
 10
 26
 0.277777777778
+Average deviation = 73.7061111111mm
 ---------------
-run 3
+run 3 - 1 Sensor Reading 
 13
 23
 0.361111111111
+Average deviation = 58.7008333333mm
 ---------------
-run 4
+run 4 - 1 Sensor Reading
 11
 25
 0.305555555556
+Average deviation = 71.8411111111mm
 ---------------
-run 5 - 2 Sensor Readings
+
+
+
+---------------
+run 1 - 2 Sensor Readings
 20
 16
 0.555555555556
+Average deviation = 39.7163888889mm
+---------------
