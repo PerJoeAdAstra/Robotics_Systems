@@ -52,7 +52,7 @@
 #include "utils.h"      // Used to generate random gaussian numbers.
 #include "irproximity.h"// Used for the ir distance sensor.
 #include <stdlib.h>
-#include "Vector.h"
+
 
 //#include "imu.h"          // Advanced, work through labsheet if you wish to use.
 //#include "magnetometer.h" // Advanced, work through labsheet if you wish to use.
@@ -401,7 +401,7 @@ void calibrateSensors() {
 
   // Other sensors..?
 
-  IRSensor0.calibrate(fabs(360));
+  IRSensor0.calibrate(fabs(335));
   // After calibrating, we send the robot to
   // its initial state.
   changeState( STATE_WAIT );
@@ -474,8 +474,8 @@ void takeReading(){
   
   float distance = 0.0f; 
 
-  if(int(radsToDegs(theta/45)) %2 == 0) distance = fabs(360/cos(fmod(theta,PI/2)));
-  else{distance = fabs(360/sin(fmod(theta,PI/2)));}
+  if(int(radsToDegs(theta/45)) %2 == 0) distance = fabs(335/cos(fmod(theta,PI/2)));
+  else{distance = fabs(335/sin(fmod(theta,PI/2)));}
   Serial.println("Reading: " + (String)reading + ", " + "Theta: " + (String) theta + ", Actual Distance: " + (String)distance);
 
   //Add to map
