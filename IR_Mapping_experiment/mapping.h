@@ -25,6 +25,7 @@ class Mapper {
   private:
     int X_size;
     int Y_size;
+    int tally[MAP_RESOLUTION][MAP_RESOLUTION] = {0};
 };
 
 void Mapper::resetMap() {
@@ -47,15 +48,11 @@ void Mapper::printMap() {
   
   if ( SERIAL_ACTIVE ) {
     Serial.println("Map");
-    for (int i = MAP_RESOLUTION - 1; i >= 0; i--) {
+    for (int i = 0; i < MAP_RESOLUTION; i++) {
       for (int j = 0; j < MAP_RESOLUTION; j++) {
-        int eeprom_address = (i * MAP_RESOLUTION) + j;
-        byte value;
-        value = EEPROM.read(eeprom_address);//, value);
-        if(value){
-          
-          Serial.print( (char)value );
-        }
+     
+        if(tally[i][j] >100) Serial.print('o' );
+        else Serial.print(" ");
       
       }
     Serial.println("");
@@ -90,6 +87,8 @@ void Mapper::updateMapFeature(byte feature, int y, int x) {
 
   int x_index = poseToIndex(x, MAP_X, MAP_RESOLUTION);
   int y_index = poseToIndex(y, MAP_Y, MAP_RESOLUTION);
+
+  tally[x_index][y_index] ++;
 
   int eeprom_address = (x_index * MAP_RESOLUTION) + y_index;
 

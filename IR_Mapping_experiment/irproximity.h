@@ -26,13 +26,13 @@ int SharpIR::getDistanceRaw( ) {
 
 void SharpIR::calibrate(float distance){
   // user specificies distance it will be calibrated to
-  // difference is calculated over 100 reads
+  // difference is calculated over NUM_OF_READINGS
   // return difference
-  float totalValues = 0;
-  float avgMM = 0;
+  float totalValues = 0.0f;
+  float avgMM = 0.0f;
 
   for (int i = 0; i< NUM_OF_READINGS; i++){
-    totalValues += getDistanceRaw(); // get 100 raw readings
+    totalValues += getDistanceRaw(); 
   }
 
   float avgValue = totalValues/NUM_OF_READINGS; // find the average
