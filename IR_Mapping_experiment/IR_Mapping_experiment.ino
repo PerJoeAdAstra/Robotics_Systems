@@ -535,7 +535,7 @@ void takeReading(){
   float reading_l_c = 0.0f;
   float reading_l = 0.0f;
   float reading_m = 0.0f;
-  int totalReadings = 200;
+  int totalReadings = 20;
   int bin_size = 5;
   float theta_r = fmod((RomiPose.theta + degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);
   float theta_l = fmod((RomiPose.theta - degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);
@@ -544,7 +544,7 @@ void takeReading(){
   int tally[total_bins] = {0};
   for(int i = 0; i < totalReadings ; i++){
     reading_r = IRSensor_R.getDistanceCalibrated();
-    reading_l_c = IRSensor_L.getDistanceCalibrated();
+    reading_l += IRSensor_L.getDistanceCalibrated();
     reading_m = IRSensor_M.getDistanceCalibrated();
     int index = int(reading_l_c/bin_size);
     if (index >=0 && index <800){ 
@@ -552,14 +552,14 @@ void takeReading(){
     }
   } 
 
-  
-  int max =0;
-  for(int i = 0 ; i < (sizeof(tally)/sizeof(tally[0])); i++){
-    if(tally[i] > max) {reading_l = i;max =tally[i];} 
-  }
-  
-  reading_l *= bin_size;
-  
+  reading_l /= totalReadings;
+//  int max =0;
+//  for(int i = 0 ; i < (sizeof(tally)/sizeof(tally[0])); i++){
+//    if(tally[i] > max) {reading_l = i;max =tally[i];}   
+//  }
+//  
+//  reading_l *= bin_size;
+//  
     //calculate the x,y location using RomiPose.theta and readings
     
     
