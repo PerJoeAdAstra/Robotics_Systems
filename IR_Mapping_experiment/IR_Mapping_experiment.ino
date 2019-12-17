@@ -535,17 +535,18 @@ void takeReading(){
   float reading_l_c = 0.0f;
   float reading_l = 0.0f;
   float reading_m = 0.0f;
-  int totalReadings = 20;
+  int totalReadings = 200;
+  int bin_size = 5;
   float theta_r = fmod((RomiPose.theta + degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);
   float theta_l = fmod((RomiPose.theta - degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);
   float theta_m = RomiPose.theta;
-
-  int tally[800] = {0};
+  int total_bins = int(800/bin_size);
+  int tally[total_bins] = {0};
   for(int i = 0; i < totalReadings ; i++){
     reading_r = IRSensor_R.getDistanceCalibrated();
     reading_l_c = IRSensor_L.getDistanceCalibrated();
     reading_m = IRSensor_M.getDistanceCalibrated();
-    int index = int(reading_l_c);
+    int index = int(reading_l_c/bin_size);
     if (index >=0 && index <800){ 
       tally[index] ++;
     }
@@ -554,10 +555,10 @@ void takeReading(){
   
   int max =0;
   for(int i = 0 ; i < (sizeof(tally)/sizeof(tally[0])); i++){
-    if(tally[i] > max) reading_l = i;  
+    if(tally[i] > max) {reading_l = i;max =tally[i];} 
   }
-
-
+  
+  reading_l *= bin_size;
   
     //calculate the x,y location using RomiPose.theta and readings
     
@@ -640,7 +641,7 @@ void takeReading(){
     if(theta_m >= PI) x_m = -x_m;
 
 
-    Serial.println((String)reading_l + ", " + (String)theta_l + ", " + (String)500);
+    Serial.println((String)reading_l + "," + (String)theta_l + "," + (String)500);
     
     Map.updateMapFeature('o', RomiPose.x + x_l, RomiPose.y + y_l);
 
