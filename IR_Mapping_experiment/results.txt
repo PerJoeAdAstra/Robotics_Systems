@@ -1,0 +1,10 @@
+Accuracy
+
+baseline: 
+
+within 30mm: 50%
+average deviation: 
+
+thresholded:
+within 30mm: 38%
+average deviation: 
