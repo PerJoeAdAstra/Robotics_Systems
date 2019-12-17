@@ -78,7 +78,7 @@ u8 USB_SendSpace(u8 ep);
 
 #define BUZZER_PIN      6   // To make the annoying beeping
 
-#define IR_PROX_PIN0    A0   // IR Sensor 0
+#define IR_PROX_PIN0    A2   // IR Sensor 0
 // #define IR_PROX_PIN1    A1   // IR Sensor 1
 
 #define DEBUG_LED      13   // Using the orange LED for debugging
@@ -401,7 +401,7 @@ void calibrateSensors() {
 
   // Other sensors..?
 
-  IRSensor0.calibrate(fabs(335));
+  IRSensor0.calibrate(fabs(500));
   // After calibrating, we send the robot to
   // its initial state.
   changeState( STATE_WAIT );
@@ -436,7 +436,7 @@ void waitBehaviour() {
   // Acknowledge button press.
   beep();
   
-  if (mode == 0){ 
+  if (mode == 0){
     Map.printMap();
     // calculateAccuracy();
     delay(5000);
@@ -473,9 +473,11 @@ void takeReading(){
 
   
   float distance = 0.0f; 
+  
 
   if(int(radsToDegs(theta/45)) %2 == 0) distance = fabs(335/cos(fmod(theta,PI/2)));
   else{distance = fabs(335/sin(fmod(theta,PI/2)));}
+  distance = 500;
   Serial.println("Reading: " + (String)reading + ", " + "Theta: " + (String) theta + ", Actual Distance: " + (String)distance);
 
   //Add to map
