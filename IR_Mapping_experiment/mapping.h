@@ -53,7 +53,6 @@ void Mapper::printMap() {
         byte value;
         value = EEPROM.read(eeprom_address);//, value);
         if(value){
-          
           Serial.print( (char)value );
         }
       

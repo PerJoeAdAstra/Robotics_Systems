@@ -31,23 +31,22 @@ def calculateAccuracy2(reading, theta, actualAccuracy, total_offset):
 x = []
 y = []
 
-with open('deviationpertheta_1-sensor.csv', 'r') as csv_file:
+with open('one-sensor-bad.csv', 'r') as csv_file:
     csv_reader = csv.reader(csv_file)
     for row in csv_reader:
-        y.append(row[0])
-        x.append(row[1])
+        y.append(float(row[0]) - 500)
+        x.append(float(row[1]))
 
-
+plt.ylabel('Deviation (mm)')
+plt.xlabel('Theta (radians)')
 plt.plot(x, y)
 plt.show()
 
 
-
-
-# with open('measurements5.csv', 'r') as csv_file:
+# with open('measurements-1-sensor-circle.csv', 'r') as csv_file:
 #     csv_reader = csv.reader(csv_file)
 #     for row in csv_reader:
-#         # print(row)
-#         total_offset = calculateAccuracy2(row[0], row[1], row[2], total_offset)
+#         # total_offset = calculateAccuracy2(row[0], row[1], row[2], total_offset)
+#         x.append()
 #     average_offset = float(total_offset)/36
 #     print(average_offset)
