@@ -52,7 +52,7 @@
 #include "utils.h"      // Used to generate random gaussian numbers.
 #include "irproximity.h"// Used for the ir distance sensor.
 #include <stdlib.h>
-//#include "Vector.h"
+
 
 //#include "imu.h"          // Advanced, work through labsheet if you wish to use.
 //#include "magnetometer.h" // Advanced, work through labsheet if you wish to use.
@@ -76,8 +76,8 @@ u8 USB_SendSpace(u8 ep);
 #define BUZZER_PIN      6   // To make the annoying beeping
 
 #define IR_PROX_PINR    A0   // IR Sensor 0
-#define IR_PROX_PINL    A4   // IR Sensor 1
-#define IR_PROX_PINM    A2   // IR Sensor 1
+#define IR_PROX_PINL    A2   // IR Sensor 1
+#define IR_PROX_PINM    A4   // IR Sensor 1
 
 #define DEBUG_LED      13   // Using the orange LED for debugging
 
@@ -403,9 +403,10 @@ void calibrateSensors() {
 
   // Other sensors..?
 
-  IRSensor_R.calibrate(fabs(335/cos(fmod(degsToRads(ANGLE_SEPERATION) + TWO_PI,TWO_PI))));
-  IRSensor_L.calibrate(fabs(335/cos(fmod(degsToRads(ANGLE_SEPERATION) + TWO_PI,TWO_PI))));
-  IRSensor_M.calibrate(335);
+  //IRSensor_R.calibrate(fabs(335/cos(fmod(degsToRads(ANGLE_SEPERATION) + TWO_PI,TWO_PI))));
+  //IRSensor_L.calibrate(fabs(335/cos(fmod(degsToRads(ANGLE_SEPERATION) + TWO_PI,TWO_PI))));
+  IRSensor_L.calibrate(500);
+  //IRSensor_M.calibrate(335);
   // After calibrating, we send the robot to
   // its initial state.
   changeState( STATE_WAIT );
@@ -531,26 +532,33 @@ void avoidObstacle() {
 
 void takeReading(){
   float reading_r = 0.0f; 
+  float reading_l_c = 0.0f;
   float reading_l = 0.0f;
   float reading_m = 0.0f;
   int totalReadings = 20;
   float theta_r = fmod((RomiPose.theta + degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);
   float theta_l = fmod((RomiPose.theta - degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);
   float theta_m = RomiPose.theta;
-  
+
+  int tally[800] = {0};
   for(int i = 0; i < totalReadings ; i++){
     reading_r = IRSensor_R.getDistanceCalibrated();
-    reading_l = IRSensor_L.getDistanceCalibrated();
+    reading_l_c = IRSensor_L.getDistanceCalibrated();
     reading_m = IRSensor_M.getDistanceCalibrated();
-  
+    int index = int(reading_l_c);
+    if (index >=0 && index <800){ 
+      tally[index] ++;
+    }
+  } 
 
-    reading_r /= totalReadings;
-    reading_l /= totalReadings;
-    reading_m /= totalReadings;
-//  
-    //reading_r *= cos(degsToRads(ANGLE_SEPERATION));
-    //reading_l *= cos(degsToRads(ANGLE_SEPERATION));  
-    
+  
+  int max =0;
+  for(int i = 0 ; i < (sizeof(tally)/sizeof(tally[0])); i++){
+    if(tally[i] > max) reading_l = i;  
+  }
+
+
+  
     //calculate the x,y location using RomiPose.theta and readings
     
     
@@ -610,12 +618,12 @@ void takeReading(){
     }
   
      if ((int(radsToDegs(theta_m)/90) % 2) == 0){
-      x_m  = reading_l * sin(angle_m);    
-      y_m  = reading_l * cos(angle_m);
+      x_m  = reading_m * sin(angle_m);    
+      y_m  = reading_m * cos(angle_m);
     }
     else{
-      x_m  = reading_l * cos(angle_m);
-      y_m  = reading_l * sin(angle_m);    
+      x_m  = reading_m * cos(angle_m);
+      y_m  = reading_m * sin(angle_m);    
     }
   
     
@@ -630,21 +638,13 @@ void takeReading(){
     
     if(theta_m >= PI/2 && theta_m <= 1.5*PI) y_m = -y_m;
     if(theta_m >= PI) x_m = -x_m;
-    
-//    float x    = (x_r + x_l)/2;
-//    float y    = (y_r + y_l)/2;
-  
-//    float x = x_m;
-//    float y = y_m;
-  
-    Serial.println("x_l: " + (String) x_l +", y_l " + (String)y_l + ", theta_m: " + (String)theta_l);
-    Serial.println("x_m: " + (String) x_m +", y_m " + (String)y_m + ", theta_m: " + (String)theta_m);
-    Serial.println("x_r: " + (String) x_r +", y_r " + (String)y_r + ", theta_r: " + (String)theta_r);
-    Map.updateMapFeature('o', RomiPose.x + x_l, RomiPose.y + y_l);
-    Map.updateMapFeature('o', RomiPose.x + x_r, RomiPose.y + y_r);
-    Map.updateMapFeature('o', RomiPose.x + x_m, RomiPose.y + y_m);
 
-  }
+
+    Serial.println((String)reading_l + ", " + (String)theta_l + ", " + (String)500);
+    
+    Map.updateMapFeature('o', RomiPose.x + x_l, RomiPose.y + y_l);
+
+  
 
 
 }
