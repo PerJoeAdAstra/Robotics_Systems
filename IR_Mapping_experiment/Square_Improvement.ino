@@ -456,25 +456,36 @@ void waitBehaviour() {
 
 void takeReading(){
   float reading_r = 0.0f; 
+  float reading_l_c = 0.0f;
   float reading_l = 0.0f;
   float reading_m = 0.0f;
   int totalReadings = 50;
-  
+  int bin_size = 2;
   float theta_r = fmod((RomiPose.theta + degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);  
   float theta_l = fmod((RomiPose.theta - degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI); 
   float theta_m = RomiPose.theta;
-  
+  int total_bins = int(700/bin_size);
+  int tally[total_bins] = {0};
 
 
   //Out of 50 readings, find which reading was the most common 
   for(int i = 0; i < totalReadings ; i++){
     reading_r   = IRSensor_R.getDistanceCalibrated();
     reading_l   = IRSensor_L.getDistanceCalibrated();
-    reading_m  += IRSensor_M.getDistanceCalibrated();
-   
+    reading_m_c = IRSensor_M.getDistanceCalibrated();
+    int index  = int(reading_l_c/bin_size);
+    if (index >=0 && index <700){
+      tally[index] ++;
+    }
   } 
  
-  reading_m /=totalReadings;
+  int max =0;
+  for(int i = 0 ; i < (sizeof(tally)/sizeof(tally[0])); i++){
+    if(tally[i] > max) {reading_c = i;max =tally[i];}   
+  }
+  
+  reading_m *= bin_size;
+
   //calculate the x,y location using RomiPose.theta and readings
 
 
