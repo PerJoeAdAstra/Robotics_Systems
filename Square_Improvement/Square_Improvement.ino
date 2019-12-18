@@ -401,9 +401,9 @@ void calibrateSensors() {
   R_Motor.setPower( 0 );
 
   //All IRSensors calibration for a square environment
-  IRSensor_R.calibrate(500);
-  IRSensor_L.calibrate(500); 
-  IRSensor_M.calibrate(500);
+  IRSensor_R.calibrate(fabs(335/cos(fmod(degsToRads(ANGLE_SEPERATION) + TWO_PI,TWO_PI))));
+  IRSensor_L.calibrate(fabs(335/cos(fmod(degsToRads(ANGLE_SEPERATION) + TWO_PI,TWO_PI)))); 
+  IRSensor_M.calibrate(335);
   
   // After calibrating, we send the robot to
   // its initial state.
@@ -456,7 +456,7 @@ void waitBehaviour() {
 
 void takeReading(){
   float reading_r = 0.0f; 
-  float reading_l_c = 0.0f;
+  float reading_m_c = 0.0f;
   float reading_l = 0.0f;
   float reading_m = 0.0f;
   int totalReadings = 50;
@@ -464,7 +464,7 @@ void takeReading(){
   float theta_r = fmod((RomiPose.theta + degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI);  
   float theta_l = fmod((RomiPose.theta - degsToRads(ANGLE_SEPERATION)) + TWO_PI, TWO_PI); 
   float theta_m = RomiPose.theta;
-  int total_bins = int(800/bin_size);
+  int total_bins = int(700/bin_size);
   int tally[total_bins] = {0};
 
 
@@ -474,7 +474,7 @@ void takeReading(){
     reading_l   = IRSensor_L.getDistanceCalibrated();
     reading_m_c = IRSensor_M.getDistanceCalibrated();
     int index  = int(reading_m_c/bin_size);
-    if (index >=0 && index <800){
+    if (index >=0 && index <700){
       tally[index] ++;
     }
   } 
@@ -488,6 +488,8 @@ void takeReading(){
 
   //calculate the x,y location using RomiPose.theta and readings
 
+
+
   //Calculate ground truth and x and y co ordiante from reading value for all three sensors
   float distance_m = 0.0f;
   float distance_r = 0.0f; 
@@ -500,18 +502,40 @@ void takeReading(){
   
   float x_m = 0.0f;
   float y_m = 0.0f;
+    
+  float angle_r = fmod(theta_r,PI/2);
+  float angle_l = fmod(theta_l,PI/2);
+  float angle_m = fmod(theta_m,PI/2);
+  
+
+  distance_r = distanceCalculator(theta_r, angle_r);
+  distance_l  = distanceCalculator(theta_l, angle_l);
+  distance_m  = distanceCalculator(theta_m, angle_m);
+
+  x_r         = x_calculator(theta_r, angle_r, reading_r);
+  y_r         = y_calculator(theta_r, angle_r, reading_r);
+
+  x_m         = x_calculator(theta_m, angle_m, reading_m);
+  y_m         = y_calculator(theta_m, angle_m, reading_m);
+
+  x_l         = x_calculator(theta_l, angle_l, reading_l);
+  y_l         = y_calculator(theta_l, angle_l, reading_l);
 
 
-  x_m = x_calculator(theta_m, reading_m);
-  y_m = y_calculator(theta_m, reading_m);
+  
+  if(theta_r >= PI/2 && theta_r <= 1.5*PI) y_r = -y_r;
+  if(theta_r >= PI) x_r = -x_r;
+  
+  
+  if(theta_l >= PI/2 && theta_l <= 1.5*PI) y_l = -y_l;
+  if(theta_l >= PI) x_l = -x_l;
+  
+    
+  if(theta_m >= PI/2 && theta_m <= 1.5*PI) y_m = -y_m;
+  if(theta_m >= PI) x_m = -x_m;
 
-  x_l = x_calculator(theta_l, reading_l);
-  y_l = y_calculator(theta_l, reading_l);
 
-  x_r = x_calculator(theta_r, reading_r);
-  y_r = y_calculator(theta_r, reading_r);
-
-  Serial.println((String)reading_m + "," + (String)theta_m + "," + (String)500);
+  Serial.println((String)reading_m + "," + (String)theta_m + "," + (String)distance_m);
     
   Map.updateMapFeature('o', RomiPose.x + x_m, RomiPose.y + y_m);
 
@@ -533,14 +557,32 @@ float distanceCalculator(float theta, float angle){
 }
 
 
-float x_calculator(float theta, float reading){
-    return reading*cos(theta);
+float x_calculator(float theta, float angle, float reading){
+    float x = 0.0f;
+    if ((int(radsToDegs(theta)/90) % 2) == 0){
+      x  = reading * sin(angle);    
+      
+    }
+    else{
+      x  = reading* cos(angle);      
+    }  
+    return x;
 }
 
 
 
-float y_calculator(float theta, float reading){
-    return reading*sin(theta);
+float y_calculator(float theta, float angle, float reading){
+    float y = 0.0f;
+    if ((int(radsToDegs(theta)/90) % 2) == 0){
+      y  = reading * cos(angle);    
+      
+    }
+    else{
+      y  = reading * sin(angle);
+          
+    }  
+
+    return y;
 }
 
 void turnToAngle(float angle) {
