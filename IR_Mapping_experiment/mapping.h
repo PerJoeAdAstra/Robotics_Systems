@@ -19,15 +19,9 @@ class Mapper {
     void printMap();
     void updateMapFeature(byte feature, int y, int x);
     void updateMapFeature(byte feature, float y, float x);
-
     int  indexToPose(int i, int map_size, int resolution);
     int  poseToIndex(int x, int map_size, int resolution);
-
-  private:
-    int X_size;
-    int Y_size;
-    
-    void calculateAccuracy();
+   
 };
 
 void Mapper::resetMap() {

@@ -34,10 +34,12 @@ void SharpIR::calibrate(float distance){
   for (int i = 0; i< NUM_OF_READINGS; i++){
     totalValues += getDistanceRaw(); 
   }
-
+  
   float avgValue = totalValues/NUM_OF_READINGS; // find the average
   avgMM = getDistanceInMM(avgValue); //convert to MM
   delta = distance - avgMM; // find difference
+
+  
   Serial.println("delta: " + (String)delta);
   Serial.println("distance: " + (String)distance);
   Serial.println("avgMM: " + (String)avgMM);
@@ -46,7 +48,6 @@ void SharpIR::calibrate(float distance){
 float SharpIR::getDistanceCalibrated(){
   return getDistanceInMM(getDistanceRaw()) + delta;
 }
-
 
 /*
  * This piece of code is quite crucial to mapping
